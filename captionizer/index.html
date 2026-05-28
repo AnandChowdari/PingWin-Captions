@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=320, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';">
+    <title>Captionizer</title>
+    <link rel="stylesheet" href="style.css?v=1.1.0">
+</head>
+
+<body>
+    <div id="panel-container">
+        
+        <!-- ═══════════ LICENSE AUTH SCREEN ═══════════ -->
+        <div id="auth-screen" class="auth-screen">
+            <div class="auth-header">
+                <div class="logo-icon logo-icon-lg">C</div>
+                <h2>Activate Captionizer</h2>
+                <p>Enter your credentials to unlock the plugin.</p>
+            </div>
+            
+            <div class="status-msg" id="auth-status-msg"></div>
+
+            <div class="auth-field">
+                <label for="auth-email">Email Address</label>
+                <input type="email" id="auth-email" placeholder="name@email.com" autocomplete="on">
+            </div>
+
+            <div class="auth-field">
+                <label for="auth-key">License Key</label>
+                <input type="password" id="auth-key" placeholder="CAP-XXXX-XXXX-XXXX" autocomplete="off">
+            </div>
+
+            <button class="btn btn-primary" id="btn-activate-license">Activate License</button>
+            
+            <div class="auth-footer">
+                Need a license key? Contact your administrator.
+            </div>
+        </div>
+
+        <!-- ═══════════ Header ═══════════ -->
+        <div class="panel-header">
+            <div class="logo">
+                <div class="logo-icon">C</div>
+                <span class="logo-text">Captionizer</span>
+            </div>
+            <span class="version">v1.0.0</span>
+        </div>
+
+        <!-- ═══════════ Tab Bar ═══════════ -->
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="generate" id="tab-generate-btn">Generate</button>
+            <button class="tab-btn" data-tab="settings" id="tab-settings-btn">Settings</button>
+        </div>
+
+        <!-- ═══════════ GENERATE TAB ═══════════ -->
+        <div class="tab-content active" id="tab-generate">
+
+            <!-- Status Message -->
+            <div class="status-msg" id="status-msg"></div>
+
+            <!-- 1. Selected Clip -->
+            <div class="section">
+                <div class="section-label"><span class="dot"></span>Selected Clip</div>
+                <div class="clip-box" id="clip-box">
+                    <div class="clip-empty" id="clip-empty">No clip selected</div>
+                    <div id="clip-info" style="display:none">
+                        <div class="clip-name" id="clip-name"></div>
+                        <div class="clip-meta">
+                            <span id="clip-duration"></span>
+                            <span id="clip-fps"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Read Clip Button -->
+            <div class="section">
+                <button class="btn btn-icon" id="btn-read-clip">
+                    <span>⎔</span> Click to Read Selected Clip
+                </button>
+            </div>
+
+            <!-- 3. STT Provider -->
+            <div class="section">
+                <div class="section-label"><span class="dot"></span>STT Provider</div>
+                <div class="select-wrap">
+                    <select id="stt-provider">
+                        <option value="elevenlabs">ElevenLabs Scribe</option>
+                        <option value="deepgram">Deepgram Nova-2</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 4. Source Language -->
+            <div class="section">
+                <div class="section-label"><span class="dot"></span>Source Language</div>
+                <div class="select-wrap">
+                    <select id="source-lang">
+                        <option value="auto">Auto Detect</option>
+                        <option value="te">Telugu</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ta">Tamil</option>
+                        <option value="kn">Kannada</option>
+                        <option value="ml">Malayalam</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 5. Caption Languages -->
+            <div class="section">
+                <div class="section-label"><span class="dot"></span>Caption Language</div>
+                <div class="pills" id="caption-langs">
+                    <div class="pill active" data-lang="native_script">Native Script</div>
+                    <div class="pill" data-lang="phonetic">English Phonetic</div>
+                    <div class="pill" data-lang="english">English</div>
+                </div>
+            </div>
+
+            <!-- 6. Translate Toggle -->
+            <div class="section">
+                <div class="toggle-row">
+                    <span class="toggle-label">Translate Captions</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="translate-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="translate-target" id="translate-target">
+                    <div class="section-label" style="margin-top:4px"><span class="dot"></span>Translate To</div>
+                    <div class="select-wrap">
+                        <select id="translate-lang">
+                            <option value="en">English</option>
+                            <option value="te">Telugu</option>
+                            <option value="hi">Hindi</option>
+                            <option value="ta">Tamil</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. AI Provider -->
+            <div class="section">
+                <div class="section-label"><span class="dot"></span>AI Provider</div>
+                <div class="select-wrap">
+                    <select id="ai-provider">
+                        <option value="auto">Auto (any free model)</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="groq">Groq</option>
+                        <option value="openrouter">OpenRouter</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 8. Caption Style -->
+            <div class="section">
+                <div class="section-label"><span class="dot"></span>Caption Style</div>
+                <div class="select-wrap">
+                    <select id="caption-style">
+                        <option value="single_line">Single Line (Standard)</option>
+                        <option value="double_line">Double Line Captions</option>
+                        <option value="word_by_word">Word by Word</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 9. Output Options -->
+            <div class="section">
+                <div class="section-label"><span class="dot"></span>Output</div>
+                <div class="pills" id="output-options">
+                    <div class="pill active" data-output="text_layers">Text Layers in AE</div>
+                    <div class="pill" data-output="srt_export">SRT File Export</div>
+                </div>
+            </div>
+
+            <!-- 9. Generate Button -->
+            <div class="section" id="generate-section">
+                <button class="btn btn-primary" id="btn-generate">
+                    ▶ Generate Captions
+                </button>
+            </div>
+
+            <!-- 10. Progress Section -->
+            <div class="progress-section" id="progress-section">
+                <div class="progress-step" id="progress-step">
+                    <div class="spinner"></div>
+                    <span id="progress-step-text">Initializing…</span>
+                </div>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <div class="caption-preview" id="caption-preview"></div>
+                <button class="btn btn-danger btn-sm" id="btn-cancel">
+                    ✕ Cancel
+                </button>
+            </div>
+
+            <!-- Done State -->
+            <div class="done-state" id="done-state">
+                <div class="done-icon">✓</div>
+                <div class="done-text" id="done-text">Captions Generated!</div>
+                <div class="done-detail" id="done-detail"></div>
+                <button class="btn btn-sm mt-12" id="btn-new-generation" style="max-width:160px;margin:12px auto 0">
+                    New Generation
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══════════ SETTINGS TAB ═══════════ -->
+        <div class="tab-content" id="tab-settings">
+
+            <div class="settings-header">
+                <svg viewBox="0 0 16 16">
+                    <path d="M8 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5.5 8a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z" />
+                    <path
+                        d="M6.64 1.27a.5.5 0 01.36-.27h2a.5.5 0 01.49.4l.28 1.39a5.5 5.5 0 011.21.7l1.33-.45a.5.5 0 01.56.18l1 1.73a.5.5 0 01-.1.58l-1.05.94a5.5 5.5 0 010 1.4l1.05.94a.5.5 0 01.1.58l-1 1.73a.5.5 0 01-.56.18l-1.33-.45a5.5 5.5 0 01-1.21.7l-.28 1.39a.5.5 0 01-.49.4H7a.5.5 0 01-.49-.4l-.28-1.39a5.5 5.5 0 01-1.21-.7l-1.33.45a.5.5 0 01-.56-.18l-1-1.73a.5.5 0 01.1-.58l1.05-.94a5.5 5.5 0 010-1.4l-1.05-.94a.5.5 0 01-.1-.58l1-1.73a.5.5 0 01.56-.18l1.33.45a5.5 5.5 0 011.21-.7l.28-1.39z" />
+                </svg>
+                API Keys
+            </div>
+
+            <!-- ElevenLabs -->
+            <div class="api-section">
+                <div class="api-section-header">
+                    <span class="api-section-name">
+                        ElevenLabs
+                        <span class="badge badge-recommended">Recommended</span>
+                    </span>
+                </div>
+                <div class="api-section-hint">10k free chars/mo — <a href="https://elevenlabs.io"
+                        target="_blank">elevenlabs.io</a></div>
+                <input type="password" class="input-key" id="key-elevenlabs" placeholder="xi-api-key…"
+                    autocomplete="off">
+            </div>
+
+            <!-- Deepgram -->
+            <div class="api-section">
+                <div class="api-section-header">
+                    <span class="api-section-name">
+                        Deepgram
+                        <span class="badge badge-free">$200 Free</span>
+                    </span>
+                </div>
+                <div class="api-section-hint">$200 free credits — <a href="https://console.deepgram.com"
+                        target="_blank">console.deepgram.com</a></div>
+                <input type="password" class="input-key" id="key-deepgram" placeholder="Token…" autocomplete="off">
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Google Gemini -->
+            <div class="api-section">
+                <div class="api-section-header">
+                    <span class="api-section-name">
+                        Google Gemini
+                        <span class="badge badge-recommended">Recommended</span>
+                    </span>
+                </div>
+                <div class="api-section-hint">Free tier — <a href="https://aistudio.google.com"
+                        target="_blank">aistudio.google.com</a></div>
+                <input type="password" class="input-key" id="key-gemini" placeholder="API key…" autocomplete="off">
+                <input type="text" class="input-key" id="key-model-gemini" placeholder="Model (e.g. gemini-2.0-flash)" style="margin-top: 8px;" autocomplete="off">
+            </div>
+
+            <!-- OpenRouter -->
+            <div class="api-section">
+                <div class="api-section-header">
+                    <span class="api-section-name">
+                        OpenRouter
+                        <span class="badge badge-free">Free Models</span>
+                    </span>
+                </div>
+                <div class="api-section-hint">Free models available — <a href="https://openrouter.ai"
+                        target="_blank">openrouter.ai</a></div>
+                <input type="password" class="input-key" id="key-openrouter" placeholder="Bearer token…"
+                    autocomplete="off">
+                <input type="text" class="input-key" id="key-model-openrouter" placeholder="Model (e.g. nvidia/nemotron-3-super-120b-a12b:free)" style="margin-top: 8px;" autocomplete="off">
+            </div>
+
+            <!-- Groq -->
+            <div class="api-section">
+                <div class="api-section-header">
+                    <span class="api-section-name">
+                        Groq
+                        <span class="badge badge-free">Free</span>
+                    </span>
+                </div>
+                <div class="api-section-hint">Free at — <a href="https://console.groq.com"
+                        target="_blank">console.groq.com</a></div>
+                <input type="password" class="input-key" id="key-groq" placeholder="API key…" autocomplete="off">
+                <input type="text" class="input-key" id="key-model-groq" placeholder="Model (e.g. llama-3.3-70b-versatile)" style="margin-top: 8px;" autocomplete="off">
+            </div>
+
+            <div class="divider"></div>
+
+            <button class="btn btn-primary" id="btn-save-keys">Save Keys</button>
+            <div class="save-feedback" id="save-feedback">✓ Keys saved to local storage</div>
+
+            <div class="divider"></div>
+
+            <!-- Licensing Status -->
+            <div class="settings-header">
+                <svg viewBox="0 0 16 16">
+                    <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2-3a2 2 0 11-4 0 2 2 0 014 0zm4 8c0-1-1-4-6-4s-6 3-6 4v1h12v-1z"/>
+                </svg>
+                License Information
+            </div>
+            <div class="api-section">
+                <div class="api-section-hint">License active for: <strong id="license-active-email" style="color:var(--text-primary)">—</strong></div>
+                <button class="btn btn-danger btn-sm mt-8" id="btn-deactivate-license">Deactivate License</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="lib/CSInterface.js"></script>
+    <script src="main.js?v=1.1.0"></script>
+</body>
+
+</html>

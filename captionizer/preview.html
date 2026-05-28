@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captionizer — CEP Panel Browser Preview</title>
+    <!-- Link to the original extension stylesheet to ensure visual accuracy -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ---------- Browser Preview Workspace Styling ---------- */
+        :root {
+            --ws-bg: #1e1e1e;
+            --ws-panel: #141414;
+            --ws-panel-header: #222222;
+            --ws-border: #2d2d2d;
+            --ws-text-active: #ffffff;
+            --ws-text-dim: #999999;
+            --ws-accent: #7c6dfa;
+            --ws-border-focus: #555555;
+            --ws-success: #4ade80;
+        }
+
+        body.browser-preview {
+            background-color: var(--ws-bg);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            color: var(--ws-text-dim);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Top Workspace Control Bar */
+        .ws-topbar {
+            height: 38px;
+            background: var(--ws-panel-header);
+            border-bottom: 1px solid var(--ws-border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 16px;
+            color: var(--ws-text-active);
+            font-weight: 500;
+        }
+
+        .ws-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .ws-logo span {
+            color: var(--ws-accent);
+        }
+
+        .ws-app-selector {
+            display: flex;
+            background: #2b2b2b;
+            border-radius: 4px;
+            padding: 2px;
+            gap: 2px;
+            margin-left: auto;
+        }
+
+        .ws-app-btn {
+            background: transparent;
+            border: none;
+            color: var(--ws-text-dim);
+            padding: 4px 10px;
+            font-size: 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .ws-app-btn.active {
+            background: var(--ws-accent);
+            color: #ffffff;
+        }
+
+        .ws-app-btn:hover:not(.active) {
+            color: var(--ws-text-active);
+            background: #383838;
+        }
+
+        /* Workspace Main Layout */
+        .ws-main {
+            flex: 1;
+            display: flex;
+            height: calc(100vh - 38px);
+        }
+
+        /* Left Side: Mock Video Editor */
+        .ws-editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--ws-border);
+            background: #141414;
+        }
+
+        /* Top half of editor: project bin + program monitor */
+        .ws-editor-top {
+            flex: 3;
+            display: flex;
+            border-bottom: 1px solid var(--ws-border);
+        }
+
+        /* Project Bin Mockup */
+        .ws-project-panel {
+            width: 220px;
+            background: var(--ws-panel);
+            border-right: 1px solid var(--ws-border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ws-panel-title {
+            background: var(--ws-panel-header);
+            padding: 6px 12px;
+            color: var(--ws-text-active);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--ws-border);
+        }
+
+        .ws-clip-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ws-clip-item {
+            padding: 8px;
+            background: #1c1c1c;
+            border: 1px solid var(--ws-border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .ws-clip-item.active {
+            border-color: var(--ws-accent);
+            background: rgba(124, 109, 250, 0.08);
+        }
+
+        .ws-clip-item:hover:not(.active) {
+            background: #252525;
+            border-color: #444;
+        }
+
+        .ws-clip-name {
+            font-weight: 600;
+            color: var(--ws-text-active);
+            font-size: 10.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ws-clip-details {
+            font-size: 9px;
+            color: var(--ws-text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Program Monitor Mockup */
+        .ws-monitor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0d0d0d;
+        }
+
+        .ws-monitor-screen {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: radial-gradient(circle, #252528 0%, #0d0d0d 100%);
+        }
+
+        /* Canvas simulation / Mock Video */
+        .ws-video-canvas {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            color: #fff;
+        }
+
+        .ws-audio-wave {
+            width: 150px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            margin-bottom: 20px;
+        }
+
+        .ws-audio-bar {
+            flex: 1;
+            background: var(--ws-accent);
+            height: 10%;
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+
+        .ws-audio-bar.playing {
+            animation: bounce 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { height: 10%; }
+            100% { height: 100%; }
+        }
+
+        /* Video Captions Overlay */
+        .ws-caption-overlay {
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+            right: 20px;
+            text-align: center;
+            pointer-events: none;
+            display: none;
+        }
+
+        .ws-caption-text {
+            background: rgba(0, 0, 0, 0.75);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            font-size: 14px;
+            border-radius: 6px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            max-width: 80%;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Player Controls */
+        .ws-monitor-controls {
+            height: 32px;
+            background: var(--ws-panel-header);
+            border-top: 1px solid var(--ws-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 0 12px;
+        }
+
+        .ws-play-btn {
+            background: transparent;
+            border: none;
+            color: var(--ws-text-active);
+            font-size: 14px;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .ws-play-btn:hover {
+            background: #333;
+        }
+
+        .ws-timecode {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ws-accent);
+        }
+
+        /* Bottom Half: Timeline Mockup */
+        .ws-timeline-panel {
+            flex: 1.8;
+            background: var(--ws-panel);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ws-timeline-tracks {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #111111;
+        }
+
+        .ws-timeline-track {
+            height: 28px;
+            background: #181818;
+            border: 1px solid var(--ws-border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ws-track-label {
+            font-weight: bold;
+            font-size: 9px;
+            color: var(--ws-text-dim);
+            width: 30px;
+            z-index: 10;
+        }
+
+        .ws-track-block {
+            height: 20px;
+            background: #443c8c;
+            border: 1px solid var(--ws-accent);
+            border-radius: 3px;
+            position: absolute;
+            left: 50px;
+            width: 320px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            color: #fff;
+            font-size: 9.5px;
+            font-weight: 500;
+        }
+
+        .ws-track-block.audio {
+            background: #1e3f36;
+            border-color: #2e6f56;
+        }
+
+        .ws-track-block.caption {
+            background: #2a205a;
+            border-color: var(--ws-accent);
+            animation: slideIn 0.3s ease;
+        }
+
+        /* Right Side: The CEP Panel Mockup Container */
+        .ws-panel-container {
+            width: 320px;
+            background: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Add browser mockup styles for scrollbar height */
+        #panel-container {
+            height: 100%;
+        }
+
+        .ws-instructions {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px dashed var(--ws-accent);
+            padding: 10px;
+            border-radius: 6px;
+            max-width: 250px;
+            pointer-events: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 100;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+
+<body class="browser-preview">
+
+    <!-- Workspace Control Bar -->
+    <div class="ws-topbar">
+        <div class="ws-logo">Captionizer <span>CEP Sandbox</span></div>
+        <div style="font-size: 9px; opacity:0.6;">(Simulating After Effects & Premiere Pro integration inside browser)</div>
+        <div class="ws-app-selector">
+            <button class="ws-app-btn active" id="app-ae-btn" onclick="selectApp('AEFT')">After Effects Mode</button>
+            <button class="ws-app-btn" id="app-ppro-btn" onclick="selectApp('PPRO')">Premiere Pro Mode</button>
+        </div>
+    </div>
+
+    <!-- Workspace Layout -->
+    <div class="ws-main">
+
+        <!-- Left Side: Mock Video Editor Workspace -->
+        <div class="ws-editor-container">
+            <div class="ws-editor-top">
+                <!-- Project Bin -->
+                <div class="ws-project-panel">
+                    <div class="ws-panel-title" id="bin-title">Project Bin (AE Comps)</div>
+                    <div class="ws-clip-list" id="clip-list">
+                        <!-- Clips will be generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Program Monitor -->
+                <div class="ws-monitor-panel">
+                    <div class="ws-panel-title">Program Monitor / Preview Screen</div>
+                    <div class="ws-monitor-screen">
+                        <div class="ws-video-canvas">
+                            <div style="font-size: 14px; font-weight:bold; color: #fff; margin-bottom: 8px;" id="monitor-clip-name">No clip selected</div>
+                            <div style="font-size: 10px; color: var(--ws-text-dim); margin-bottom: 24px;" id="monitor-clip-desc">Select a clip and click "Read Selected Clip"</div>
+                            
+                            <div class="ws-audio-wave">
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                                <div class="ws-audio-bar"></div>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Captions Overlay -->
+                        <div class="ws-caption-overlay" id="caption-overlay">
+                            <span class="ws-caption-text" id="caption-overlay-text">Subtitles load here...</span>
+                        </div>
+
+                        <!-- Drag and Drop Overlay Instructions -->
+                        <div class="ws-instructions" id="drag-instructions">
+                            <div style="font-weight:bold; color: var(--ws-success); margin-bottom:4px;">💡 Quick Tip!</div>
+                            Timeline Caption file is now in your Project Bin. Drag the <span style="color:var(--ws-accent)">captions.srt</span> file directly onto your Timeline tracks!
+                        </div>
+                    </div>
+
+                    <!-- Monitor Controls -->
+                    <div class="ws-monitor-controls">
+                        <button class="ws-play-btn" id="play-btn" onclick="togglePlay()" disabled>▶</button>
+                        <div class="ws-timecode" id="timecode">00:00:00:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Adobe Timeline -->
+            <div class="ws-timeline-panel">
+                <div class="ws-panel-title" id="timeline-title">Active Comp Timeline</div>
+                <div class="ws-timeline-tracks" id="timeline-tracks">
+                    <!-- Dynamic timeline tracks based on app mode -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: The actual Captionizer CEP Panel -->
+        <div class="ws-panel-container">
+            <div id="panel-container">
+
+                <!-- ═══════════ LICENSE AUTH SCREEN ═══════════ -->
+                <div id="auth-screen" class="auth-screen">
+                    <div class="auth-header">
+                        <div class="logo-icon logo-icon-lg">C</div>
+                        <h2>Activate Captionizer</h2>
+                        <p>Enter your credentials to unlock the plugin.</p>
+                        <div style="font-size:8.5px; color:var(--ws-accent); margin-top:6px; border: 1px dashed var(--ws-accent); padding:4px; border-radius:3px;">
+                            Offline Mock key seeded: Type <strong>test@customer.com</strong> & key <strong>CAP-1234</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="status-msg" id="auth-status-msg"></div>
+
+                    <div class="auth-field">
+                        <label for="auth-email">Email Address</label>
+                        <input type="email" id="auth-email" placeholder="name@email.com" autocomplete="on">
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="auth-key">License Key</label>
+                        <input type="password" id="auth-key" placeholder="CAP-XXXX-XXXX-XXXX" autocomplete="off">
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-activate-license" onclick="mockActivateLicense()">Activate License</button>
+                    
+                    <div class="auth-footer">
+                        Need a license key? Contact your administrator.
+                    </div>
+                </div>
+
+                <!-- ═══════════ Header ═══════════ -->
+                <div class="panel-header">
+                    <div class="logo">
+                        <div class="logo-icon">C</div>
+                        <span class="logo-text">Captionizer</span>
+                    </div>
+                    <span class="version" style="background:#222; border: 1px solid var(--border)">CEP Preview</span>
+                </div>
+
+                <!-- ═══════════ Tab Bar ═══════════ -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="generate" id="tab-generate-btn" onclick="switchTab('generate')">Generate</button>
+                    <button class="tab-btn" data-tab="settings" id="tab-settings-btn" onclick="switchTab('settings')">Settings</button>
+                </div>
+
+                <!-- ═══════════ GENERATE TAB ═══════════ -->
+                <div class="tab-content active" id="tab-generate">
+                    <!-- Status Message -->
+                    <div class="status-msg" id="status-msg"></div>
+
+                    <!-- 1. Selected Clip -->
+                    <div class="section">
+                        <div class="section-label"><span class="dot"></span>Selected Clip</div>
+                        <div class="clip-box" id="clip-box">
+                            <div class="clip-empty" id="clip-empty">No clip selected</div>
+                            <div id="clip-info" style="display:none">
+                                <div class="clip-name" id="clip-name"></div>
+                                <div class="clip-meta">
+                                    <span id="clip-duration"></span>
+                                    <span id="clip-fps"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Read Clip Button -->
+                    <div class="section">
+                        <button class="btn btn-icon" id="btn-read-clip" onclick="mockReadClip()">
+                            <span>⎔</span> Click to Read Selected Clip
+                        </button>
+                    </div>
+
+                    <!-- 3. STT Provider -->
+                    <div class="section">
+                        <div class="section-label"><span class="dot"></span>STT Provider</div>
+                        <div class="select-wrap">
+                            <select id="stt-provider">
+                                <option value="elevenlabs">ElevenLabs Scribe</option>
+                                <option value="deepgram">Deepgram Nova-2</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 4. Source Language -->
+                    <div class="section">
+                        <div class="section-label"><span class="dot"></span>Source Language</div>
+                        <div class="select-wrap">
+                            <select id="source-lang">
+                                <option value="auto">Auto Detect</option>
+                                <option value="te">Telugu</option>
+                                <option value="hi">Hindi</option>
+                                <option value="ta">Tamil</option>
+                                <option value="kn">Kannada</option>
+                                <option value="ml">Malayalam</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 5. Caption Languages -->
+                    <div class="section">
+                        <div class="section-label"><span class="dot"></span>Caption Language</div>
+                        <div class="pills" id="caption-langs">
+                            <div class="pill active" data-lang="native_script" onclick="togglePill(this)">Native Script</div>
+                            <div class="pill" data-lang="phonetic" onclick="togglePill(this)">English Phonetic</div>
+                            <div class="pill" data-lang="english" onclick="togglePill(this)">English</div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Translate Toggle -->
+                    <div class="section">
+                        <div class="toggle-row">
+                            <span class="toggle-label">Translate Captions</span>
+                            <label class="toggle">
+                                <input type="checkbox" id="translate-toggle" onchange="toggleTranslate(this)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="translate-target" id="translate-target">
+                            <div class="section-label" style="margin-top:4px"><span class="dot"></span>Translate To</div>
+                            <div class="select-wrap">
+                                <select id="translate-lang">
+                                    <option value="en">English</option>
+                                    <option value="te">Telugu</option>
+                                    <option value="hi">Hindi</option>
+                                    <option value="ta">Tamil</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 7. AI Provider -->
+                    <div class="section">
+                        <div class="section-label"><span class="dot"></span>AI Provider</div>
+                        <div class="select-wrap">
+                            <select id="ai-provider">
+                                <option value="auto">Auto (any free model)</option>
+                                <option value="gemini">Google Gemini</option>
+                                <option value="groq">Groq</option>
+                                <option value="openrouter">OpenRouter</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 8. Output Options -->
+                    <div class="section">
+                        <div class="section-label" id="output-section-label"><span class="dot"></span>Output</div>
+                        <div class="pills" id="output-options">
+                            <div class="pill active" data-output="text_layers" id="pill-text-layers" onclick="togglePill(this)">Text Layers in AE</div>
+                            <div class="pill" data-output="srt_export" onclick="togglePill(this)">SRT File Export</div>
+                        </div>
+                    </div>
+
+                    <!-- 9. Generate Button -->
+                    <div class="section" id="generate-section">
+                        <button class="btn btn-primary" id="btn-generate" onclick="mockGenerateCaptions()">
+                            ▶ Generate Captions
+                        </button>
+                    </div>
+
+                    <!-- 10. Progress Section -->
+                    <div class="progress-section" id="progress-section">
+                        <div class="progress-step" id="progress-step">
+                            <div class="spinner"></div>
+                            <span id="progress-step-text">Initializing…</span>
+                        </div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar" id="progress-bar"></div>
+                        </div>
+                        <div class="caption-preview" id="caption-preview"></div>
+                        <button class="btn btn-danger btn-sm" id="btn-cancel" onclick="cancelGeneration()">
+                            ✕ Cancel
+                        </button>
+                    </div>
+
+                    <!-- Done State -->
+                    <div class="done-state" id="done-state">
+                        <div class="done-icon">✓</div>
+                        <div class="done-text" id="done-text">Captions Generated!</div>
+                        <div class="done-detail" id="done-detail"></div>
+                        <button class="btn btn-sm mt-12" id="btn-new-generation" style="max-width:160px;margin:12px auto 0" onclick="resetGeneration()">
+                            New Generation
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ═══════════ SETTINGS TAB ═══════════ -->
+                <div class="tab-content" id="tab-settings">
+                    <div class="settings-header">
+                        <svg viewBox="0 0 16 16">
+                            <path d="M8 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5.5 8a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z" />
+                            <path d="M6.64 1.27a.5.5 0 01.36-.27h2a.5.5 0 01.49.4l.28 1.39a5.5 5.5 0 011.21.7l1.33-.45a.5.5 0 01.56.18l1 1.73a.5.5 0 01-.1.58l-1.05.94a5.5 5.5 0 010 1.4l1.05.94a.5.5 0 01.1.58l-1 1.73a.5.5 0 01-.56.18l-1.33-.45a5.5 5.5 0 01-1.21.7l-.28 1.39a.5.5 0 01-.49.4H7a.5.5 0 01-.49-.4l-.28-1.39a5.5 5.5 0 01-1.21-.7l-1.33.45a.5.5 0 01-.56-.18l-1-1.73a.5.5 0 01.1-.58l1.05-.94a5.5 5.5 0 010-1.4l-1.05-.94a.5.5 0 01-.1-.58l1-1.73a.5.5 0 01.56-.18l1.33.45a5.5 5.5 0 011.21-.7l.28-1.39z" />
+                        </svg>
+                        API Keys ( CEP Simulation )
+                    </div>
+
+                    <!-- ElevenLabs -->
+                    <div class="api-section">
+                        <div class="api-section-header">
+                            <span class="api-section-name">
+                                ElevenLabs
+                                <span class="badge badge-recommended">Recommended</span>
+                            </span>
+                        </div>
+                        <div class="api-section-hint">10k free chars/mo — elevenlabs.io</div>
+                        <input type="password" class="input-key" id="key-elevenlabs" placeholder="xi-api-key…" autocomplete="off" value="••••••••••••••••••••">
+                    </div>
+
+                    <!-- Deepgram -->
+                    <div class="api-section">
+                        <div class="api-section-header">
+                            <span class="api-section-name">
+                                Deepgram
+                                <span class="badge badge-free">$200 Free</span>
+                            </span>
+                        </div>
+                        <div class="api-section-hint">$200 free credits — console.deepgram.com</div>
+                        <input type="password" class="input-key" id="key-deepgram" placeholder="Token…" autocomplete="off" value="">
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Google Gemini -->
+                    <div class="api-section">
+                        <div class="api-section-header">
+                            <span class="api-section-name">
+                                Google Gemini
+                                <span class="badge badge-recommended">Recommended</span>
+                            </span>
+                        </div>
+                        <div class="api-section-hint">Free tier — aistudio.google.com</div>
+                        <input type="password" class="input-key" id="key-gemini" placeholder="API key…" autocomplete="off" value="••••••••••••••••••••">
+                    </div>
+
+                    <!-- OpenRouter -->
+                    <div class="api-section">
+                        <div class="api-section-header">
+                            <span class="api-section-name">
+                                OpenRouter
+                                <span class="badge badge-free">Free Models</span>
+                            </span>
+                        </div>
+                        <div class="api-section-hint">Free models available — openrouter.ai</div>
+                        <input type="password" class="input-key" id="key-openrouter" placeholder="Bearer token…" autocomplete="off" value="">
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <button class="btn btn-primary" id="btn-save-keys" onclick="mockSaveKeys()">Save Keys</button>
+                    <div class="save-feedback" id="save-feedback">✓ Keys saved to local storage</div>
+
+                    <div class="divider"></div>
+
+                    <!-- Licensing Status -->
+                    <div class="settings-header">
+                        <svg viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2-3a2 2 0 11-4 0 2 2 0 014 0zm4 8c0-1-1-4-6-4s-6 3-6 4v1h12v-1z"/>
+                        </svg>
+                        License Information
+                    </div>
+                    <div class="api-section">
+                        <div class="api-section-hint">License active for: <strong id="license-active-email" style="color:var(--ws-text-active)">test@customer.com</strong></div>
+                        <button class="btn btn-danger btn-sm mt-8" id="btn-deactivate-license" onclick="mockDeactivateLicense()">Deactivate License</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Interface Controller Simulator Code -->
+    <script>
+        // Global variables for simulation
+        let currentApp = 'AEFT';
+        let selectedClipIndex = null;
+        let isSimulating = false;
+        let playInterval = null;
+        let currentPlayhead = 0;
+        let simulatedDuration = 0;
+        let activeCaptions = [];
+        let simulationTimer = null;
+
+        // Mock database of footage/composition clips
+        const mockClips = {
+            'AEFT': [
+                { name: 'Comp 1 - Telugu Cooking Biryani', duration: 12, fps: 29.97, file: 'C:/Vids/biryani_recipe_vlog.mp4', lang: 'te' },
+                { name: 'Comp 2 - Street Interview Tamil', duration: 9, fps: 24, file: 'C:/Vids/tamil_food_review.mov', lang: 'ta' },
+                { name: 'Footage - Hinglish Comedy Sketch.mp4', duration: 9, fps: 30, file: 'D:/Assets/comedy_skit_03.mp4', lang: 'hi' }
+            ],
+            'PPRO': [
+                { name: 'Vlog Clip_Biryani_Telugu.mp4', duration: 12, fps: 23.976, file: 'E:/Vids/biryani_recipe_vlog.mp4', lang: 'te' },
+                { name: 'Food_Review_Street_Tamil.mov', duration: 9, fps: 24, file: 'E:/Vids/tamil_food_review.mov', lang: 'ta' },
+                { name: 'Comedy_Sketch_Hinglish_Final.mp4', duration: 9, fps: 29.97, file: 'E:/Assets/comedy_skit_03.mp4', lang: 'hi' }
+            ]
+        };
+
+        // Mock transcription responses by language
+        const mockTranscriptions = {
+            'te': [
+                { start: 0.5, end: 3.5, original: 'నేను ఈరోజు రుచికరమైన బిర్యానీ చేస్తున్నాను', tenglish: 'Nenu eeraju ruchikaraina biryani chestunnanu', english: 'I am making delicious biryani today' },
+                { start: 3.8, end: 7.2, original: 'మసాలాలు వేసి బాగా కలపాలి', tenglish: 'Masalalu vesi baga kalapali', english: 'Add spices and mix well' },
+                { start: 7.5, end: 11.5, original: 'ఇది చాలా రుచిగా ఉంటుంది', tenglish: 'Idi chala ruchiga untundi', english: 'This will be very tasty' }
+            ],
+            'ta': [
+                { start: 0.5, end: 3.2, original: 'இன்றைய உணவு பயணம் மிகவும் அருமை', tamil: 'இன்றைய உணவு பயணம் மிகவும் அருமை', english: 'Today\'s food tour is very awesome' },
+                { start: 3.5, end: 6.2, original: 'இந்த தோசை மிகவும் மொறுமொறுப்பாக உள்ளது', tamil: 'இந்த தோசை மிகவும் மொறுமொறுப்பாக உள்ளது', english: 'This dosa is very crispy' },
+                { start: 6.5, end: 8.8, original: 'கண்டிப்பாக அனைவரும் முயற்சி செய்ய வேண்டும்', tamil: 'கண்டிப்பாக அனைவரும் முயற்சி செய்ய வேண்டும்', english: 'Everyone must definitely try this' }
+            ],
+            'hi': [
+                { start: 0.5, end: 3.0, original: 'भाई आज तो कुछ नया करते हैं', hinglish: 'Bhai aaj to kuch naya karte hain', english: 'Brother, let\'s do something new today' },
+                { start: 3.2, end: 6.0, original: 'हाँ यार बहुत बोर हो रहे हैं', hinglish: 'Haan yaar bahut bore ho rahe hain', english: 'Yes bro, we are getting very bored' },
+                { start: 6.2, end: 8.5, original: 'चلو बाहर घूम के आते हैं', hinglish: 'Chalo bahar ghoom ke आते hain', english: 'Come on, let\'s go hang out outside' }
+            ]
+        };
+
+        // On document load
+        document.addEventListener('DOMContentLoaded', () => {
+            selectApp('AEFT');
+            mockCheckAuthStatus();
+        });
+
+        // Mock check authentication status
+        function mockCheckAuthStatus() {
+            const token = localStorage.getItem("captionizer_preview_auth_token");
+            const email = localStorage.getItem("captionizer_preview_auth_email");
+            const authScreen = document.getElementById("auth-screen");
+
+            if (token && email) {
+                authScreen.style.display = "none";
+                document.getElementById("license-active-email").textContent = email;
+            } else {
+                authScreen.style.display = "flex";
+                document.getElementById("auth-status-msg").className = "status-msg";
+            }
+        }
+
+        function mockActivateLicense() {
+            const email = document.getElementById("auth-email").value.trim();
+            const key = document.getElementById("auth-key").value.trim();
+            const statusMsg = document.getElementById("auth-status-msg");
+
+            if (!email || !key) {
+                statusMsg.className = "status-msg visible error";
+                statusMsg.textContent = "Please enter both Email and License Key.";
+                return;
+            }
+
+            statusMsg.className = "status-msg visible warning";
+            statusMsg.textContent = "Activating license key...";
+
+            setTimeout(() => {
+                if (email.toLowerCase() === "test@customer.com" && key.toUpperCase() === "CAP-1234") {
+                    localStorage.setItem("captionizer_preview_auth_token", "mock_token_12345");
+                    localStorage.setItem("captionizer_preview_auth_email", email);
+                    statusMsg.className = "status-msg visible success";
+                    statusMsg.textContent = "License key activated successfully!";
+                    setTimeout(() => {
+                        mockCheckAuthStatus();
+                    }, 800);
+                } else if (key.toUpperCase().startsWith("CAP-")) {
+                    localStorage.setItem("captionizer_preview_auth_token", "mock_token_random");
+                    localStorage.setItem("captionizer_preview_auth_email", email);
+                    statusMsg.className = "status-msg visible success";
+                    statusMsg.textContent = "License key activated successfully!";
+                    setTimeout(() => {
+                        mockCheckAuthStatus();
+                    }, 800);
+                } else {
+                    statusMsg.className = "status-msg visible error";
+                    statusMsg.textContent = "Invalid license key. Enter key starting with 'CAP-' (e.g. CAP-1234)";
+                }
+            }, 800);
+        }
+
+        function mockDeactivateLicense() {
+            localStorage.removeItem("captionizer_preview_auth_token");
+            localStorage.removeItem("captionizer_preview_auth_email");
+            mockCheckAuthStatus();
+            switchTab('generate');
+        }
+
+        // Toggle app mode between AE and Premiere
+        function selectApp(appCode) {
+            currentApp = appCode;
+            selectedClipIndex = null;
+            resetPlayer();
+
+            // Toggle active styling on Workspace App switcher
+            document.getElementById('app-ae-btn').classList.toggle('active', appCode === 'AEFT');
+            document.getElementById('app-ppro-btn').classList.toggle('active', appCode === 'PPRO');
+
+            // Update titles inside editor
+            document.getElementById('bin-title').textContent = appCode === 'AEFT' ? 'Project Bin (AE Comps)' : 'Project Bin (Media Files)';
+            document.getElementById('timeline-title').textContent = appCode === 'AEFT' ? 'Active Composition Timeline' : 'Active Sequence Timeline';
+
+            // Generate mock project bin contents
+            const listContainer = document.getElementById('clip-list');
+            listContainer.innerHTML = '';
+            
+            mockClips[appCode].forEach((clip, index) => {
+                const item = document.createElement('div');
+                item.className = 'ws-clip-item';
+                item.onclick = () => selectClip(index);
+                item.innerHTML = `
+                    <div class="ws-clip-name">🎥 ${clip.name}</div>
+                    <div class="ws-clip-details">
+                        <span>⏱ 0:${clip.duration < 10 ? '0' : ''}${clip.duration}</span>
+                        <span>${clip.fps} fps</span>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+
+            // Update UI inside CEP Panel
+            const textLayersPill = document.getElementById('pill-text-layers');
+            const outputSectionLabel = document.getElementById('output-section-label');
+            if (appCode === 'PPRO') {
+                textLayersPill.textContent = 'Import SRT to Project';
+                textLayersPill.setAttribute('title', 'Automatically imports generated SRT file into your Premiere Pro project bin.');
+                outputSectionLabel.innerHTML = '<span class="dot"></span>Output <span style="font-size:9px;opacity:0.6;margin-left:4px;">(Premiere Mode)</span>';
+            } else {
+                textLayersPill.textContent = 'Text Layers in AE';
+                textLayersPill.removeAttribute('title');
+                outputSectionLabel.innerHTML = '<span class="dot"></span>Output';
+            }
+
+            // Generate Timeline Tracks
+            generateTimelineTracks();
+            resetGeneration();
+        }
+
+        // Selection of clip in Project Bin
+        function selectClip(index) {
+            selectedClipIndex = index;
+            const items = document.querySelectorAll('.ws-clip-item');
+            items.forEach((item, idx) => {
+                item.classList.toggle('active', idx === index);
+            });
+
+            const clip = mockClips[currentApp][index];
+            document.getElementById('monitor-clip-name').textContent = clip.name;
+            document.getElementById('monitor-clip-desc').textContent = clip.file;
+            document.getElementById('timecode').textContent = '00:00:00:00';
+            
+            // Set source language selector automatically for convenience
+            document.getElementById('source-lang').value = clip.lang;
+
+            // Enable play button
+            document.getElementById('play-btn').removeAttribute('disabled');
+            simulatedDuration = clip.duration;
+
+            generateTimelineTracks();
+            resetPlayer();
+        }
+
+        // Generate timeline UI representation
+        function generateTimelineTracks() {
+            const container = document.getElementById('timeline-tracks');
+            container.innerHTML = '';
+
+            const clip = selectedClipIndex !== null ? mockClips[currentApp][selectedClipIndex] : null;
+
+            // Video Track
+            const videoTrack = document.createElement('div');
+            videoTrack.className = 'ws-timeline-track';
+            videoTrack.innerHTML = '<span class="ws-track-label">V1</span>';
+            if (clip) {
+                videoTrack.innerHTML += `<div class="ws-track-block">${clip.name}</div>`;
+            }
+            container.appendChild(videoTrack);
+
+            // Audio Track
+            const audioTrack = document.createElement('div');
+            audioTrack.className = 'ws-timeline-track';
+            audioTrack.innerHTML = '<span class="ws-track-label">A1</span>';
+            if (clip) {
+                audioTrack.innerHTML += `<div class="ws-track-block audio">${clip.name} (Audio)</div>`;
+            }
+            container.appendChild(audioTrack);
+
+            // Captions Track (Premiere Pro) or Text Layer (After Effects)
+            if (activeCaptions.length > 0) {
+                if (currentApp === 'PPRO') {
+                    const capTrack = document.createElement('div');
+                    capTrack.className = 'ws-timeline-track';
+                    capTrack.innerHTML = '<span class="ws-track-label">C1</span>';
+                    capTrack.innerHTML += `<div class="ws-track-block caption" style="background:#5b1e6e; border-color:#9d3fc4; width:320px;">[Subtitle Track] captions.srt</div>`;
+                    container.insertBefore(capTrack, videoTrack);
+                } else {
+                    // AE Text Layers (adds multiple visual text blocks stacked)
+                    activeCaptions.forEach((cap, i) => {
+                        const aeTrack = document.createElement('div');
+                        aeTrack.className = 'ws-timeline-track';
+                        aeTrack.innerHTML = `<span class="ws-track-label">Text</span>`;
+                        const startLeft = 50 + (cap.start * 20);
+                        const blockWidth = (cap.end - cap.start) * 20;
+                        aeTrack.innerHTML += `<div class="ws-track-block caption" style="left: ${startLeft}px; width: ${blockWidth}px;">Caption ${i+1}: ${cap.display_text}</div>`;
+                        container.appendChild(aeTrack);
+                    });
+                }
+            }
+        }
+
+        // Simulates clicking "Read Selected Clip" inside CEP panel
+        function mockReadClip() {
+            const status = document.getElementById('status-msg');
+            status.className = 'status-msg';
+
+            if (selectedClipIndex === null) {
+                status.className = 'status-msg visible warning';
+                status.textContent = 'No clip selected. Please select a clip in the Project Bin mockup first!';
+                return;
+            }
+
+            const clip = mockClips[currentApp][selectedClipIndex];
+            
+            document.getElementById('clip-empty').style.display = 'none';
+            document.getElementById('clip-info').style.display = 'block';
+            document.getElementById('clip-box').classList.add('has-clip');
+            document.getElementById('clip-name').textContent = clip.name;
+            document.getElementById('clip-duration').textContent = `⏱ 0:${clip.duration < 10 ? '0' : ''}${clip.duration}`;
+            document.getElementById('clip-fps').textContent = `${clip.fps} fps`;
+        }
+
+        // Simulated CEP Generation Pipeline
+        function mockGenerateCaptions() {
+            if (selectedClipIndex === null) {
+                showStatusMsg('error', 'Select a clip first! Select a clip in the Project bin and click "Read Selected Clip"');
+                return;
+            }
+
+            // Make sure the read clip was triggered
+            const clipInfoVisible = document.getElementById('clip-info').style.display === 'block';
+            if (!clipInfoVisible) {
+                showStatusMsg('warning', 'Click "Read Selected Clip" to load the video metadata first!');
+                return;
+            }
+
+            const captionLangs = getSelectedPills('caption-langs');
+            const outputOptions = getSelectedPills('output-options');
+
+            if (captionLangs.length === 0) {
+                showStatusMsg('error', 'Select at least one caption language.');
+                return;
+            }
+
+            if (outputOptions.length === 0) {
+                showStatusMsg('error', 'Select at least one output option.');
+                return;
+            }
+
+            // Launch simulation
+            isSimulating = true;
+            document.getElementById('generate-section').style.display = 'none';
+            const progressSec = document.getElementById('progress-section');
+            progressSec.classList.add('visible');
+            
+            document.getElementById('caption-preview').innerHTML = '';
+            setProgressBarPercent(5);
+
+            let step = 0;
+            const steps = [
+                { text: 'Extracting audio asynchronously (via Node.js cp.exec)…', percent: 15 },
+                { text: 'Reading extracted audio buffer…', percent: 30 },
+                { text: 'Transcribing with chosen STT engine…', percent: 55 },
+                { text: 'Converting script & executing AI translation…', percent: 75 },
+                { text: 'Generating requested caption files…', percent: 90 },
+                { text: 'Done!', percent: 100 }
+            ];
+
+            const clip = mockClips[currentApp][selectedClipIndex];
+            const sourceTextData = mockTranscriptions[clip.lang];
+            const primaryLang = captionLangs[0];
+
+            activeCaptions = sourceTextData.map(c => {
+                const copy = Object.assign({}, c);
+                
+                // Dynamically resolve mapping based on selected primary pill and active source lang
+                let key = 'original';
+                if (primaryLang === 'phonetic') {
+                    key = clip.lang === 'te' ? 'tenglish' : clip.lang === 'hi' ? 'hinglish' : 'tamil';
+                } else if (primaryLang === 'english') {
+                    key = 'english';
+                }
+                
+                copy.display_text = copy[key] || copy.original;
+                return copy;
+            });
+
+            // If translate toggle is checked, apply mock translate
+            if (document.getElementById('translate-toggle').checked) {
+                const targetLang = document.getElementById('translate-lang').value;
+                activeCaptions.forEach(c => {
+                    c.display_text = c.english + ` (${targetLang.toUpperCase()})`;
+                });
+            }
+
+            function runStep() {
+                if (!isSimulating) return;
+
+                const currentStep = steps[step];
+                document.getElementById('progress-step-text').textContent = currentStep.text;
+                setProgressBarPercent(currentStep.percent);
+
+                // Show partial previews
+                if (step === 3) {
+                    addMockPreview(activeCaptions[0]);
+                } else if (step === 4) {
+                    addMockPreview(activeCaptions[1]);
+                    addMockPreview(activeCaptions[2]);
+                }
+
+                step++;
+                if (step < steps.length) {
+                    simulationTimer = setTimeout(runStep, 1000);
+                } else {
+                    simulationTimer = setTimeout(completeSimulation, 1000);
+                }
+            }
+
+            runStep();
+        }
+
+        // Simulated Preview rendering
+        function addMockPreview(caption) {
+            const preview = document.getElementById('caption-preview');
+            const item = document.createElement('div');
+            item.className = 'caption-preview-item';
+            item.innerHTML = `
+                <span class="time">0:0${Math.floor(caption.start)}</span>
+                <span class="text">${caption.display_text}</span>
+            `;
+            preview.appendChild(item);
+        }
+
+        // Completion of mockup simulation
+        function completeSimulation() {
+            isSimulating = false;
+            document.getElementById('progress-section').classList.remove('visible');
+            
+            const doneState = document.getElementById('done-state');
+            doneState.classList.add('visible');
+
+            const outputOptions = getSelectedPills('output-options');
+            let details = [];
+
+            if (currentApp === 'PPRO') {
+                if (outputOptions.includes('text_layers')) {
+                    details.push("SRT generated & imported to Project Bin!");
+                    // Show Premiere Pro Quick-Tip overlay in monitor
+                    document.getElementById('drag-instructions').style.display = 'block';
+                    
+                    // Add mock srt to project bin
+                    const listContainer = document.getElementById('clip-list');
+                    const srtNode = document.createElement('div');
+                    srtNode.className = 'ws-clip-item';
+                    srtNode.style.borderColor = 'var(--ws-success)';
+                    srtNode.style.background = 'rgba(74, 222, 128, 0.05)';
+                    srtNode.innerHTML = `
+                        <div class="ws-clip-name" style="color:var(--ws-success)">📝 captions.srt</div>
+                        <div class="ws-clip-details">
+                            <span>Subtitle Track File</span>
+                            <span>Standard SRT</span>
+                        </div>
+                    `;
+                    listContainer.appendChild(srtNode);
+                }
+            } else {
+                if (outputOptions.includes('text_layers')) {
+                    details.push("Native AE styled text layers created.");
+                }
+            }
+
+            if (outputOptions.includes('srt_export') && !(currentApp === 'PPRO' && outputOptions.includes('text_layers'))) {
+                details.push("SRT file saved to active project folder.");
+            }
+
+            document.getElementById('done-text').textContent = `${activeCaptions.length} Captions Generated!`;
+            document.getElementById('done-detail').textContent = details.join(' · ');
+
+            // Render tracks on timeline
+            generateTimelineTracks();
+        }
+
+        // Control playback functions
+        function togglePlay() {
+            const btn = document.getElementById('play-btn');
+            const bars = document.querySelectorAll('.ws-audio-bar');
+
+            if (playInterval) {
+                // Pause
+                clearInterval(playInterval);
+                playInterval = null;
+                btn.textContent = '▶';
+                bars.forEach(b => b.classList.remove('playing'));
+            } else {
+                // Play
+                btn.textContent = '❚❚';
+                bars.forEach(b => b.classList.add('playing'));
+                
+                playInterval = setInterval(() => {
+                    currentPlayhead += 0.1;
+                    if (currentPlayhead >= simulatedDuration) {
+                        currentPlayhead = 0;
+                    }
+                    
+                    // Format timecode
+                    const sec = Math.floor(currentPlayhead);
+                    const frames = Math.floor((currentPlayhead - sec) * 30);
+                    document.getElementById('timecode').textContent = `00:00:0${sec}:${frames < 10 ? '0' : ''}${frames}`;
+
+                    // Update dynamic real-time caption overlay
+                    const overlay = document.getElementById('caption-overlay');
+                    const overlayText = document.getElementById('caption-overlay-text');
+                    
+                    let activeCap = null;
+                    if (activeCaptions.length > 0) {
+                        activeCap = activeCaptions.find(c => currentPlayhead >= c.start && currentPlayhead <= c.end);
+                    }
+
+                    if (activeCap) {
+                        overlay.style.display = 'block';
+                        overlayText.textContent = activeCap.display_text;
+                    } else {
+                        overlay.style.display = 'none';
+                    }
+
+                }, 100);
+            }
+        }
+
+        function resetPlayer() {
+            if (playInterval) {
+                clearInterval(playInterval);
+                playInterval = null;
+            }
+            currentPlayhead = 0;
+            activeCaptions = [];
+            document.getElementById('play-btn').textContent = '▶';
+            document.getElementById('play-btn').setAttribute('disabled', 'true');
+            document.getElementById('timecode').textContent = '00:00:00:00';
+            document.getElementById('caption-overlay').style.display = 'none';
+            document.getElementById('drag-instructions').style.display = 'none';
+            
+            const bars = document.querySelectorAll('.ws-audio-bar');
+            bars.forEach(b => b.classList.remove('playing'));
+        }
+
+        // Cancel Generation
+        function cancelGeneration() {
+            isSimulating = false;
+            clearTimeout(simulationTimer);
+            resetGeneration();
+            showStatusMsg('warning', 'Generation cancelled by user.');
+        }
+
+        // Tabs switcher helper
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
+            });
+            document.querySelectorAll('.tab-content').forEach(tc => {
+                tc.classList.toggle('active', tc.id === 'tab-' + tabId);
+            });
+        }
+
+        // Pills toggles helper
+        function togglePill(pill) {
+            pill.classList.toggle('active');
+        }
+
+        // Translate checkbox toggle
+        function toggleTranslate(checkbox) {
+            const target = document.getElementById('translate-target');
+            target.classList.toggle('visible', checkbox.checked);
+        }
+
+        // Helper to retrieve selected pills
+        function getSelectedPills(containerId) {
+            const pills = document.querySelectorAll('#' + containerId + ' .pill.active');
+            let values = [];
+            pills.forEach(p => {
+                values.push(p.getAttribute('data-lang') || p.getAttribute('data-output'));
+            });
+            return values;
+        }
+
+        // Progress bar helper
+        function setProgressBarPercent(percent) {
+            document.getElementById('progress-bar').style.width = percent + '%';
+        }
+
+        // Save keys simulator
+        function mockSaveKeys() {
+            const fb = document.getElementById('save-feedback');
+            fb.classList.add('visible');
+            setTimeout(() => fb.classList.remove('visible'), 2500);
+        }
+
+        // Status messages helper
+        function showStatusMsg(type, text) {
+            const status = document.getElementById('status-msg');
+            status.className = `status-msg visible ${type}`;
+            status.textContent = text;
+        }
+
+        function resetGeneration() {
+            document.getElementById('done-state').classList.remove('visible');
+            document.getElementById('generate-section').style.display = 'block';
+            document.getElementById('progress-section').classList.remove('visible');
+            document.getElementById('status-msg').className = 'status-msg';
+            isSimulating = false;
+        }
+    </script>
+</body>
+
+</html>
