@@ -29,6 +29,7 @@
 
     const STORAGE_PREFIX = "pingwin_";
     const KEY_NAMES = ["elevenlabs", "deepgram", "gemini", "xai", "groq", "openrouter"];
+    const LICENSE_URL = "https://script.google.com/macros/s/AKfycbypKlUEdZiFLwS1nv94IGvQzLMc4UE-MkCHTKL0Ii5opGi_dQkvLXqr-SJGEbCGo4-QiQ/exec";
 
     // ──────────────────────────────────────────
     // Comprehensive Language Map
@@ -71,7 +72,11 @@
         initTheme();
         loadApiKeys();
         bindButtons();
-        checkAuthStatus();
+        if (localStorage.getItem("pingwin_licensed") === "true") {
+            showMainPanel();
+        } else {
+            showLicensePanel();
+        }
     });
 
     // ──────────────────────────────────────────
@@ -222,8 +227,8 @@
         });
         document.getElementById("btn-new-generation").addEventListener("click", resetGeneration);
 
-        var btnActivate = document.getElementById("btn-activate-license");
-        if (btnActivate) btnActivate.addEventListener("click", activateLicense);
+        var btnActivate = document.getElementById("activateBtn");
+        if (btnActivate) btnActivate.addEventListener("click", handleActivateClick);
 
         var btnDeactivate = document.getElementById("btn-deactivate-license");
         if (btnDeactivate) btnDeactivate.addEventListener("click", deactivateLicense);
@@ -712,11 +717,11 @@
             }
 
             if (breakSegment) {
-                var cleanWords = currentWords.map(function(w) { return w.trim(); }).filter(function(w) { return w.length > 0; });
+                var cleanWords = currentWords.map(function (w) { return w.trim(); }).filter(function (w) { return w.length > 0; });
                 var joinedText = cleanWords.join(" ");
 
-                joinedText = joinedText.replace(/\s+([.,!?])/g, '$1'); 
-                joinedText = joinedText.replace(/\s+/g, ' '); 
+                joinedText = joinedText.replace(/\s+([.,!?])/g, '$1');
+                joinedText = joinedText.replace(/\s+/g, ' ');
 
                 if (style === "double_line" && cleanWords.length > 5) {
                     var mid = Math.ceil(cleanWords.length / 2);
@@ -761,30 +766,30 @@
         if (cancelled) throw new Error("Cancelled");
 
         // Use the first requested language for the single API call
-        var primaryLang = captionLanguages[0]; 
+        var primaryLang = captionLanguages[0];
         var prompt = buildConversionPrompt(segments, primaryLang, sourceLang, captionStyle);
 
         var convertedMap = {};
         try {
             // Send entire transcript in one call to avoid rate limits
             var aiResult = await callAI(prompt, aiProvider);
-            
+
             // Clean up the AI response of control characters or null bytes
             var cleaned = aiResult
                 .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "") // control chars
                 .replace(/\uFFFD/g, "")      // replacement character
                 .replace(/\u0000/g, "")      // null bytes
                 .trim();
-            
+
             // Parse numbered lines, supporting multi-line segments
             var lines = cleaned.split('\n');
             var regex = /^(\d+)[\.\:\)]?\s*(.*)$/;
             var currentIndex = -1;
-            
+
             for (var i = 0; i < lines.length; i++) {
                 var line = lines[i].trim();
                 if (!line) continue; // skip blank lines
-                
+
                 var match = line.match(regex);
                 if (match) {
                     currentIndex = parseInt(match[1], 10) - 1; // 0-indexed internally
@@ -804,7 +809,7 @@
         for (var j = 0; j < segments.length; j++) {
             var seg = Object.assign({}, segments[j]);
             var primaryKey = langToKey(primaryLang, sourceLang);
-            
+
             if (convertedMap[j]) {
                 seg[primaryKey] = convertedMap[j];
                 seg.display_text = convertedMap[j];
@@ -856,7 +861,7 @@
     function buildConversionPrompt(segments, primaryLang, sourceLang, captionStyle) {
         var isAuto = (sourceLang === "auto");
         var sourceLangName = isAuto ? "UNKNOWN (detect it automatically)" : (LANG_NAMES[sourceLang] || "the source language");
-        
+
         var styleContext = "";
         if (captionStyle === "word_by_word") {
             styleContext = "Each input is a SINGLE WORD from a video subtitle. Return exactly one word per entry.";
@@ -1290,92 +1295,81 @@
         }
     }
 
-    function checkAuthStatus() {
-        var token = localStorage.getItem(STORAGE_PREFIX + "auth_token");
-        var email = localStorage.getItem(STORAGE_PREFIX + "auth_email");
+    function showMainPanel() {
         var authScreen = document.getElementById("auth-screen");
+        if (authScreen) authScreen.style.display = "none";
 
-        if (token && email) {
-            if (authScreen) authScreen.style.display = "none";
-            var activeEmailEl = document.getElementById("license-active-email");
-            if (activeEmailEl) activeEmailEl.textContent = email;
-        } else {
-            if (authScreen) {
-                authScreen.style.display = "flex";
-                document.getElementById("auth-status-msg").className = "status-msg";
-            }
+        var email = localStorage.getItem(STORAGE_PREFIX + "auth_email") || "Licensed User";
+        var activeEmailEl = document.getElementById("license-active-email");
+        if (activeEmailEl) activeEmailEl.textContent = email;
+    }
+
+    function showLicensePanel() {
+        var authScreen = document.getElementById("auth-screen");
+        if (authScreen) {
+            authScreen.style.display = "flex";
+            var errorMsg = document.getElementById("errorMsg");
+            if (errorMsg) errorMsg.className = "status-msg";
         }
     }
 
-    async function activateLicense() {
-        var email = document.getElementById("auth-email").value.trim();
-        var key = document.getElementById("auth-key").value.trim();
-        var statusMsg = document.getElementById("auth-status-msg");
+    function showError(message) {
+        var errorMsg = document.getElementById("errorMsg");
+        if (errorMsg) {
+            errorMsg.className = "status-msg visible error";
+            errorMsg.textContent = message;
+        }
+    }
+
+    async function validateLicense(email, licenseKey) {
+        try {
+            var resp = await fetch(LICENSE_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email, licenseKey: licenseKey })
+            });
+            if (resp.ok) {
+                var data = await resp.json();
+                return data.valid === true;
+            }
+            return false;
+        } catch (e) {
+            console.error("License validation error:", e);
+            return false;
+        }
+    }
+
+    async function handleActivateClick() {
+        var emailInput = document.getElementById("emailInput");
+        var licenseInput = document.getElementById("licenseInput");
+        var email = emailInput ? emailInput.value.trim() : "";
+        var key = licenseInput ? licenseInput.value.trim() : "";
 
         if (!email || !key) {
-            statusMsg.className = "status-msg visible error";
-            statusMsg.textContent = "Please enter both Email and License Key.";
+            showError("Please enter both Email and License Key.");
             return;
         }
 
-        statusMsg.className = "status-msg visible warning";
-        statusMsg.textContent = "Activating license...";
+        var errorMsg = document.getElementById("errorMsg");
+        if (errorMsg) {
+            errorMsg.className = "status-msg visible warning";
+            errorMsg.textContent = "Activating license...";
+        }
 
-        try {
-            var resp = await fetch("http://localhost:3000/api/activate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: email, licenseKey: key })
-            });
-
-            if (resp.ok) {
-                var data = await resp.json();
-                if (data.token) {
-                    localStorage.setItem(STORAGE_PREFIX + "auth_token", data.token);
-                    localStorage.setItem(STORAGE_PREFIX + "auth_email", email);
-
-                    statusMsg.className = "status-msg visible success";
-                    statusMsg.textContent = "License activated successfully!";
-                    setTimeout(function () {
-                        checkAuthStatus();
-                    }, 1000);
-                    return;
-                }
-            }
-
-            var errText = "Invalid email or license key.";
-            try {
-                var errJson = await resp.json();
-                if (errJson.error) errText = errJson.error;
-            } catch (e) { }
-            throw new Error(errText);
-
-        } catch (err) {
-            if (err.message.indexOf("Failed to fetch") !== -1) {
-                if (key.indexOf("PWC-") === 0) {
-                    localStorage.setItem(STORAGE_PREFIX + "auth_token", "mock_jwt_token_for_" + email);
-                    localStorage.setItem(STORAGE_PREFIX + "auth_email", email);
-                    statusMsg.className = "status-msg visible success";
-                    statusMsg.textContent = "Mock Activated (Local offline fallback)!";
-                    setTimeout(function () {
-                        checkAuthStatus();
-                    }, 1000);
-                    return;
-                } else {
-                    statusMsg.className = "status-msg visible error";
-                    statusMsg.textContent = "Auth Server offline. Enter key starting with 'PWC-' (e.g. PWC-1234) for offline mock mode.";
-                }
-            } else {
-                statusMsg.className = "status-msg visible error";
-                statusMsg.textContent = err.message;
-            }
+        var isValid = await validateLicense(email, key);
+        if (isValid) {
+            localStorage.setItem("pingwin_licensed", "true");
+            localStorage.setItem(STORAGE_PREFIX + "auth_email", email);
+            showMainPanel();
+        } else {
+            showError("Invalid license key or email.");
         }
     }
 
     function deactivateLicense() {
-        localStorage.removeItem(STORAGE_PREFIX + "auth_token");
+        localStorage.removeItem("pingwin_licensed");
         localStorage.removeItem(STORAGE_PREFIX + "auth_email");
-        checkAuthStatus();
+        showLicensePanel();
     }
 
 })();
