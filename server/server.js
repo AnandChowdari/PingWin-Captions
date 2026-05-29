@@ -1,7 +1,7 @@
 /**
  * server.js — Licensing Authentication & Email Delivery Server
  * 
- * A self-contained Express server for Captionizer plugin authentication.
+ * A self-contained Express server for PingWin Captions plugin authentication.
  * Manages database keys in a local JSON database and emails license keys 
  * automatically using Nodemailer SMTP.
  */
@@ -50,7 +50,7 @@ function readDatabase() {
                 licenses: [
                     {
                         email: 'test@customer.com',
-                        licenseKey: 'CAP-ABCD-1234-EFGH',
+                        licenseKey: 'PWC-ABCD-1234-EFGH',
                         active: true,
                         createdAt: new Date().toISOString()
                     }
@@ -78,10 +78,10 @@ function writeDatabase(db) {
     }
 }
 
-// Helper: Generate a unique, formatted license key (e.g., CAP-XXXX-XXXX-XXXX)
+// Helper: Generate a unique, formatted license key (e.g., PWC-XXXX-XXXX-XXXX)
 function generateLicenseKey() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let key = 'CAP-';
+    let key = 'PWC-';
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 4; j++) {
             key += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -121,7 +121,7 @@ app.post('/api/activate', (req, res) => {
     }
 
     // Generate a simple secure token for the plugin
-    const token = crypto.createHash('sha256').update(cleanEmail + cleanKey + 'captionizer_salt_2026').digest('hex');
+    const token = crypto.createHash('sha256').update(cleanEmail + cleanKey + 'pingwin_captions_salt_2026').digest('hex');
 
     console.log(`[AUTH] License activated successfully for: ${cleanEmail}`);
     res.json({
@@ -140,7 +140,7 @@ app.post('/api/admin/create-license', async (req, res) => {
     
     // Security check: Secure this endpoint with an Admin Token
     const adminToken = req.headers['authorization'];
-    if (adminToken !== 'Bearer cap_admin_secret_token_123') {
+    if (adminToken !== 'Bearer pwc_admin_secret_token_123') {
         return res.status(403).json({ error: "Unauthorized access." });
     }
 
@@ -174,20 +174,20 @@ app.post('/api/admin/create-license', async (req, res) => {
 
     // Compose and send email to customer
     const mailOptions = {
-        from: '"Captionizer Support" <your-email@gmail.com>',
+        from: '"PingWin Captions Support" <your-email@gmail.com>',
         to: cleanEmail,
-        subject: '🔑 Your Captionizer License Key & Credentials',
+        subject: '🐧 Your PingWin Captions License Key & Credentials',
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                <div style="text-align: center; border-bottom: 2px solid #7c6dfa; padding-bottom: 12px; margin-bottom: 20px;">
-                    <h1 style="color: #7c6dfa; margin: 0; font-size: 24px;">Captionizer</h1>
+                <div style="text-align: center; border-bottom: 2px solid #00d4aa; padding-bottom: 12px; margin-bottom: 20px;">
+                    <h1 style="color: #00d4aa; margin: 0; font-size: 24px;">🐧 PingWin Captions</h1>
                     <p style="color: #666; margin: 5px 0 0 0;">AI Captions for After Effects & Premiere Pro</p>
                 </div>
                 
-                <h2 style="color: #333; font-size: 18px;">Welcome to Captionizer!</h2>
+                <h2 style="color: #333; font-size: 18px;">Welcome to PingWin Captions!</h2>
                 <p style="color: #555; line-height: 1.5;">Your license key has been successfully created. Use the credentials below to log into the Adobe extension:</p>
                 
-                <div style="background-color: #f7f7f9; border-left: 4px solid #7c6dfa; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <div style="background-color: #f7f7f9; border-left: 4px solid #00d4aa; padding: 15px; margin: 20px 0; border-radius: 4px;">
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                             <td style="font-weight: bold; color: #444; padding: 4px 0; width: 120px;">Email:</td>
@@ -195,7 +195,7 @@ app.post('/api/admin/create-license', async (req, res) => {
                         </tr>
                         <tr>
                             <td style="font-weight: bold; color: #444; padding: 4px 0;">License Key:</td>
-                            <td style="color: #7c6dfa; font-family: monospace; font-size: 16px; font-weight: bold;">${key}</td>
+                            <td style="color: #00d4aa; font-family: monospace; font-size: 16px; font-weight: bold;">${key}</td>
                         </tr>
                     </table>
                 </div>
@@ -203,14 +203,14 @@ app.post('/api/admin/create-license', async (req, res) => {
                 <h3 style="color: #333; font-size: 14px; margin-top: 24px;">🚀 How to get started:</h3>
                 <ol style="color: #555; line-height: 1.6; padding-left: 20px;">
                     <li>Open Adobe After Effects or Adobe Premiere Pro.</li>
-                    <li>Go to <strong>Window &rarr; Extensions &rarr; Captionizer</strong>.</li>
+                    <li>Go to <strong>Window &rarr; Extensions &rarr; PingWin Captions</strong>.</li>
                     <li>Enter your email and the license key above in the login screen.</li>
                     <li>Set up your ElevenLabs/Gemini API keys in the settings and start generating captions!</li>
                 </ol>
 
                 <p style="color: #888; font-size: 11px; margin-top: 30px; border-top: 1px solid #eaeaea; padding-top: 15px; text-align: center;">
-                    If you have any questions or require support, please contact the Captionizer Administrator.<br>
-                    &copy; 2026 Captionizer. All rights reserved.
+                    If you have any questions or require support, please contact the PingWin Captions Administrator.<br>
+                    &copy; 2026 PingWin Captions. All rights reserved.
                 </p>
             </div>
         `
@@ -238,7 +238,7 @@ app.post('/api/admin/create-license', async (req, res) => {
 // Start the Server
 app.listen(PORT, () => {
     console.log(`=================================================`);
-    console.log(`🔑 Captionizer License Server running on port ${PORT}`);
+    console.log(`🐧 PingWin Captions License Server running on port ${PORT}`);
     console.log(`   - Authentication Endpoint: POST /api/activate`);
     console.log(`   - Admin Keygen Endpoint:   POST /api/admin/create-license`);
     console.log(`=================================================`);

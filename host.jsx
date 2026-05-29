@@ -1,83 +1,123 @@
 /**
- * host.jsx — ExtendScript for Adobe After Effects
+ * host.jsx — ExtendScript for Adobe After Effects & Premiere Pro
  * Captionizer CEP Plugin
  * 
- * Runs inside the AE scripting engine. All functions are called
+ * Runs inside the host application scripting engine. All functions are called
  * from main.js via CSInterface.evalScript().
  */
 
 /**
+ * App detection helpers
+ */
+function isAfterEffects() {
+    return (typeof app.project !== "undefined" && typeof app.project.activeItem !== "undefined");
+}
+
+function isPremiere() {
+    return (typeof app.project !== "undefined" && typeof app.project.activeSequence !== "undefined");
+}
+
+/**
  * Get information about the currently active/selected item in the project.
+ * Works dynamically in both After Effects and Premiere Pro.
  * Returns JSON string with clip metadata.
  */
 function getActiveClipInfo() {
-    var item = app.project.activeItem;
+    if (isAfterEffects()) {
+        var item = app.project.activeItem;
 
-    // If there's a comp open, check selected items within it
-    if (item && item instanceof CompItem) {
-        var selectedLayers = item.selectedLayers;
-        if (selectedLayers.length > 0) {
-            var layer = selectedLayers[0];
-            var source = layer.source;
-            if (source && source instanceof FootageItem && source.file) {
+        // If there's a comp open, check selected items within it
+        if (item && item instanceof CompItem) {
+            var selectedLayers = item.selectedLayers;
+            if (selectedLayers.length > 0) {
+                var layer = selectedLayers[0];
+                var source = layer.source;
+                if (source && source instanceof FootageItem && source.file) {
+                    return JSON.stringify({
+                        name: source.name,
+                        file: source.file.fsName,
+                        duration: source.duration,
+                        frameRate: source.frameRate || 0,
+                        compName: item.name,
+                        layerName: layer.name
+                    });
+                }
+                // Layer without file source
                 return JSON.stringify({
-                    name: source.name,
-                    file: source.file.fsName,
-                    duration: source.duration,
-                    frameRate: source.frameRate || 0,
+                    name: layer.name,
+                    file: "",
+                    duration: layer.outPoint - layer.inPoint,
+                    frameRate: item.frameRate,
                     compName: item.name,
                     layerName: layer.name
                 });
             }
-            // Layer without file source
+            // Comp is active but no layer selected
             return JSON.stringify({
-                name: layer.name,
+                name: item.name,
                 file: "",
-                duration: layer.outPoint - layer.inPoint,
+                duration: item.duration,
                 frameRate: item.frameRate,
                 compName: item.name,
-                layerName: layer.name
+                layerName: "",
+                info: "Composition active, no layer selected"
             });
         }
-        // Comp is active but no layer selected
-        return JSON.stringify({
-            name: item.name,
-            file: "",
-            duration: item.duration,
-            frameRate: item.frameRate,
-            compName: item.name,
-            layerName: "",
-            info: "Composition active, no layer selected"
-        });
+
+        // Check if a footage item is selected in the Project panel
+        if (item && item instanceof FootageItem) {
+            return JSON.stringify({
+                name: item.name,
+                file: item.file ? item.file.fsName : "",
+                duration: item.duration,
+                frameRate: item.frameRate || 0
+            });
+        }
+
+        return JSON.stringify({ error: "No footage or composition selected. Select a clip in the Project panel or a layer in the Timeline." });
+
+    } else if (isPremiere()) {
+        // Premiere Pro selection detection
+        
+        // 1. Check timeline sequence selection first
+        var seq = app.project.activeSequence;
+        if (seq) {
+            var selectedClips = seq.getSelection();
+            if (selectedClips && selectedClips.length > 0) {
+                var clip = selectedClips[0];
+                var projectItem = clip.projectItem;
+                if (projectItem) {
+                    var path = projectItem.getMediaPath();
+                    return JSON.stringify({
+                        name: clip.name,
+                        file: path || "",
+                        duration: clip.end.seconds - clip.start.seconds,
+                        frameRate: projectItem.getFPS ? projectItem.getFPS() : 0,
+                        sequenceName: seq.name,
+                        layerName: clip.name
+                    });
+                }
+            }
+        }
+
+        // 2. Fall back to Project Panel selection
+        if (app.project.selection && app.project.selection.length > 0) {
+            var selectedItem = app.project.selection[0];
+            // ProjectItemType.FILE is 1
+            if (selectedItem && selectedItem.type === 1) {
+                return JSON.stringify({
+                    name: selectedItem.name,
+                    file: selectedItem.getMediaPath() || "",
+                    duration: selectedItem.getInPoint ? (selectedItem.getOutPoint().seconds - selectedItem.getInPoint().seconds) : 0,
+                    frameRate: selectedItem.getFPS ? selectedItem.getFPS() : 0
+                });
+            }
+        }
+
+        return JSON.stringify({ error: "No clip selected. Select a clip in your Timeline sequence or an item in your Project bin." });
     }
 
-    // Check if a footage item is selected in the Project panel
-    if (item && item instanceof FootageItem) {
-        return JSON.stringify({
-            name: item.name,
-            file: item.file ? item.file.fsName : "",
-            duration: item.duration,
-            frameRate: item.frameRate || 0
-        });
-    }
-
-    return JSON.stringify({ error: "No footage or composition selected. Select a clip in the Project panel or a layer in the Timeline." });
-}
-
-/**
- * Extract audio from a video file using FFmpeg.
- * @param {string} inputPath - Full path to the source video file
- * @param {string} outputPath - Full path for the output MP3 file
- * @returns {string} Result message
- */
-function extractAudio(inputPath, outputPath) {
-    try {
-        var cmd = 'ffmpeg -i "' + inputPath + '" -vn -ar 16000 -ac 1 -b:a 64k -y "' + outputPath + '"';
-        var result = system.callSystem(cmd);
-        return JSON.stringify({ success: true, output: result, path: outputPath });
-    } catch (e) {
-        return JSON.stringify({ success: false, error: e.toString() });
-    }
+    return JSON.stringify({ error: "Unsupported Adobe host application context." });
 }
 
 /**
@@ -124,12 +164,16 @@ function readFileAsBase64(filePath) {
 }
 
 /**
- * Create text layers in the active composition from caption data.
+ * Create text layers in the active composition from caption data. (After Effects only)
  * @param {string} captionsJSON - JSON string of caption objects array
  * @returns {string} Result message
  */
 function createTextLayers(captionsJSON) {
     try {
+        if (!isAfterEffects()) {
+            return JSON.stringify({ error: "Text layer creation is only supported natively in After Effects." });
+        }
+
         var comp = app.project.activeItem;
         if (!comp || !(comp instanceof CompItem)) {
             return JSON.stringify({ error: "No composition active. Please activate the composition containing your clip." });
@@ -175,7 +219,27 @@ function createTextLayers(captionsJSON) {
 
         return JSON.stringify({ success: true, count: captions.length });
     } catch (e) {
-        app.endUndoGroup();
+        if (isAfterEffects()) {
+            app.endUndoGroup();
+        }
+        return JSON.stringify({ error: e.toString() });
+    }
+}
+
+/**
+ * Import a generated file directly into the Premiere Pro project bin. (Premiere Pro only)
+ * @param {string} filePath - Absolute path to the file to import
+ * @returns {string} Result message
+ */
+function importFileToProject(filePath) {
+    try {
+        if (isPremiere()) {
+            var files = [filePath];
+            app.project.importFiles(files, true, null, false);
+            return JSON.stringify({ success: true, path: filePath });
+        }
+        return JSON.stringify({ error: "Project file import is only supported in Premiere Pro." });
+    } catch (e) {
         return JSON.stringify({ error: e.toString() });
     }
 }
@@ -186,7 +250,7 @@ function createTextLayers(captionsJSON) {
  * @param {string} folderPath - Folder path to save the SRT file
  * @returns {string} Result message
  */
-function exportSRT(captionsJSON, folderPath) {
+function exportSRT(captionsJSON, folderPath, filename) {
     try {
         var captions = JSON.parse(captionsJSON);
         if (!captions || captions.length === 0) {
@@ -202,14 +266,55 @@ function exportSRT(captionsJSON, folderPath) {
             srtContent += displayText + "\n\n";
         }
 
-        var filePath = folderPath + "/captions.srt";
+        var finalName = filename || "captions.srt";
+        var filePath = folderPath + "/" + finalName;
         var file = new File(filePath);
         file.encoding = "UTF-8";
         file.open("w");
-        file.write(srtContent);
+        file.write("\uFEFF" + srtContent); // Add UTF-8 BOM
         file.close();
 
         return JSON.stringify({ success: true, path: file.fsName });
+    } catch (e) {
+        return JSON.stringify({ error: e.toString() });
+    }
+}
+
+/**
+ * Prompt user for save location and export captions as an SRT file.
+ * @param {string} captionsJSON - JSON string of caption objects array
+ * @param {string} defaultFilename - Suggested filename
+ * @returns {string} Result message
+ */
+function exportSRTWithDialog(captionsJSON, defaultFilename) {
+    try {
+        var captions = JSON.parse(captionsJSON);
+        if (!captions || captions.length === 0) {
+            return JSON.stringify({ error: "No captions to export." });
+        }
+
+        var defaultFile = new File(Folder.myDocuments.fsName + "/" + (defaultFilename || "captions.srt"));
+        var saveFile = defaultFile.saveDlg("Save SRT File", "SubRip Subtitle files:*.srt");
+
+        if (!saveFile) {
+            return JSON.stringify({ cancelled: true });
+        }
+
+        var srtContent = "";
+        for (var i = 0; i < captions.length; i++) {
+            var caption = captions[i];
+            var displayText = caption.display_text || caption.original || "";
+            srtContent += (i + 1) + "\n";
+            srtContent += formatSRTTime(caption.start) + " --> " + formatSRTTime(caption.end) + "\n";
+            srtContent += displayText + "\n\n";
+        }
+
+        saveFile.encoding = "UTF-8";
+        saveFile.open("w");
+        saveFile.write("\uFEFF" + srtContent); // Add UTF-8 BOM
+        saveFile.close();
+
+        return JSON.stringify({ success: true, path: saveFile.fsName });
     } catch (e) {
         return JSON.stringify({ error: e.toString() });
     }
@@ -245,29 +350,24 @@ function getTempDir() {
 
 /**
  * Get the project folder path (for SRT export).
+ * Works for both Premiere Pro and After Effects.
  * @returns {string} Path to the project folder
  */
 function getProjectFolder() {
-    var projectFile = app.project.file;
-    if (projectFile) {
-        return projectFile.parent.fsName;
+    // 1. Premiere Pro
+    if (typeof app.project !== "undefined" && typeof app.project.path !== "undefined" && app.project.path) {
+        var pPath = app.project.path;
+        var lastSlash = pPath.lastIndexOf("/");
+        if (lastSlash === -1) lastSlash = pPath.lastIndexOf("\\");
+        if (lastSlash !== -1) {
+            return pPath.substring(0, lastSlash);
+        }
+        return pPath;
+    }
+    // 2. After Effects
+    if (typeof app.project !== "undefined" && app.project.file) {
+        return app.project.file.parent.fsName;
     }
     // Fallback to user documents
     return Folder.myDocuments.fsName;
-}
-
-/**
- * Check if FFmpeg is available on the system.
- * @returns {string} JSON result
- */
-function checkFFmpeg() {
-    try {
-        var result = system.callSystem("ffmpeg -version");
-        if (result && result.indexOf("ffmpeg version") !== -1) {
-            return JSON.stringify({ available: true });
-        }
-        return JSON.stringify({ available: false });
-    } catch (e) {
-        return JSON.stringify({ available: false, error: e.toString() });
-    }
 }

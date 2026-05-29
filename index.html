@@ -4,20 +4,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=320, initial-scale=1.0">
-    <title>Captionizer</title>
-    <link rel="stylesheet" href="style.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <title>PingWin Captions</title>
+    <link rel="stylesheet" href="style.css?v=2.0.0">
 </head>
 
 <body>
     <div id="panel-container">
+        
+        <!-- ═══════════ LICENSE AUTH SCREEN ═══════════ -->
+        <div id="auth-screen" class="auth-screen">
+            <div class="auth-header">
+                <div class="auth-logo-wrap">
+                    <img src="logo.png" class="logo-img logo-img-lg" alt="PingWin" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="logo-icon logo-icon-lg" style="display:none">
+                        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <ellipse cx="16" cy="22" rx="10" ry="8" fill="#1a1a2e"/>
+                            <ellipse cx="16" cy="14" rx="8" ry="10" fill="#1a1a2e"/>
+                            <ellipse cx="16" cy="15" rx="6" ry="7" fill="#e8e8e8"/>
+                            <circle cx="13.5" cy="12" r="1.5" fill="#00d4aa"/>
+                            <circle cx="18.5" cy="12" r="1.5" fill="#00d4aa"/>
+                            <ellipse cx="16" cy="14.5" rx="1.2" ry="0.8" fill="#f59e0b"/>
+                            <ellipse cx="8" cy="18" rx="3" ry="1.5" fill="#1a1a2e" transform="rotate(-20 8 18)"/>
+                            <ellipse cx="24" cy="18" rx="3" ry="1.5" fill="#1a1a2e" transform="rotate(20 24 18)"/>
+                        </svg>
+                    </div>
+                </div>
+                <h2>PingWin Captions</h2>
+                <p>Enter your credentials to unlock the plugin.</p>
+            </div>
+            
+            <div class="status-msg" id="auth-status-msg"></div>
+
+            <div class="auth-field">
+                <label for="auth-email">Email Address</label>
+                <input type="email" id="auth-email" placeholder="name@email.com" autocomplete="on">
+            </div>
+
+            <div class="auth-field">
+                <label for="auth-key">License Key</label>
+                <input type="password" id="auth-key" placeholder="PWC-XXXX-XXXX-XXXX" autocomplete="off">
+            </div>
+
+            <button class="btn btn-primary" id="btn-activate-license">Activate License</button>
+            
+            <div class="auth-footer">
+                Need a license key? Contact your administrator.
+            </div>
+        </div>
 
         <!-- ═══════════ Header ═══════════ -->
         <div class="panel-header">
             <div class="logo">
-                <div class="logo-icon">C</div>
-                <span class="logo-text">Captionizer</span>
+                <img src="logo.png" class="logo-img" alt="PingWin" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <div class="logo-icon" style="display:none">
+                    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="16" cy="22" rx="10" ry="8" fill="#1a1a2e"/>
+                        <ellipse cx="16" cy="14" rx="8" ry="10" fill="#1a1a2e"/>
+                        <ellipse cx="16" cy="15" rx="6" ry="7" fill="#e8e8e8"/>
+                        <circle cx="13.5" cy="12" r="1.5" fill="#00d4aa"/>
+                        <circle cx="18.5" cy="12" r="1.5" fill="#00d4aa"/>
+                        <ellipse cx="16" cy="14.5" rx="1.2" ry="0.8" fill="#f59e0b"/>
+                        <ellipse cx="8" cy="18" rx="3" ry="1.5" fill="#1a1a2e" transform="rotate(-20 8 18)"/>
+                        <ellipse cx="24" cy="18" rx="3" ry="1.5" fill="#1a1a2e" transform="rotate(20 24 18)"/>
+                    </svg>
+                </div>
+                <span class="logo-text">PingWin Captions</span>
             </div>
-            <span class="version">v1.0.0</span>
+            <span class="version">v2.0</span>
         </div>
 
         <!-- ═══════════ Tab Bar ═══════════ -->
@@ -71,24 +125,44 @@
                 <div class="select-wrap">
                     <select id="source-lang">
                         <option value="auto">Auto Detect</option>
-                        <option value="te">Telugu</option>
-                        <option value="hi">Hindi</option>
-                        <option value="ta">Tamil</option>
-                        <option value="kn">Kannada</option>
-                        <option value="ml">Malayalam</option>
-                        <option value="en">English</option>
+                        <optgroup label="Indian Languages">
+                            <option value="te">Telugu</option>
+                            <option value="hi">Hindi</option>
+                            <option value="ta">Tamil</option>
+                            <option value="kn">Kannada</option>
+                            <option value="ml">Malayalam</option>
+                            <option value="bn">Bengali</option>
+                            <option value="mr">Marathi</option>
+                            <option value="gu">Gujarati</option>
+                            <option value="pa">Punjabi</option>
+                            <option value="ur">Urdu</option>
+                        </optgroup>
+                        <optgroup label="Global Languages">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                            <option value="ar">Arabic</option>
+                            <option value="id">Indonesian</option>
+                            <option value="th">Thai</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ru">Russian</option>
+                            <option value="tr">Turkish</option>
+                            <option value="vi">Vietnamese</option>
+                        </optgroup>
                     </select>
                 </div>
             </div>
 
-            <!-- 5. Caption Languages -->
+            <!-- 5. Caption Languages (Single Select) -->
             <div class="section">
-                <div class="section-label"><span class="dot"></span>Caption Language</div>
-                <div class="pills" id="caption-langs">
-                    <div class="pill" data-lang="telugu_script">Telugu Script</div>
-                    <div class="pill" data-lang="tenglish">Tenglish</div>
-                    <div class="pill" data-lang="hinglish">Hinglish</div>
-                    <div class="pill" data-lang="tamil_script">Tamil Script</div>
+                <div class="section-label"><span class="dot"></span>Caption Output</div>
+                <div class="pills" id="caption-langs" data-mode="single">
+                    <div class="pill active" data-lang="native_script">Native Script</div>
+                    <div class="pill" data-lang="phonetic">English Phonetic</div>
                     <div class="pill" data-lang="english">English</div>
                 </div>
             </div>
@@ -106,10 +180,34 @@
                     <div class="section-label" style="margin-top:4px"><span class="dot"></span>Translate To</div>
                     <div class="select-wrap">
                         <select id="translate-lang">
-                            <option value="en">English</option>
-                            <option value="te">Telugu</option>
-                            <option value="hi">Hindi</option>
-                            <option value="ta">Tamil</option>
+                            <optgroup label="Indian Languages">
+                                <option value="te">Telugu</option>
+                                <option value="hi">Hindi</option>
+                                <option value="ta">Tamil</option>
+                                <option value="kn">Kannada</option>
+                                <option value="ml">Malayalam</option>
+                                <option value="bn">Bengali</option>
+                                <option value="mr">Marathi</option>
+                                <option value="gu">Gujarati</option>
+                                <option value="pa">Punjabi</option>
+                                <option value="ur">Urdu</option>
+                            </optgroup>
+                            <optgroup label="Global Languages">
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="ja">Japanese</option>
+                                <option value="ko">Korean</option>
+                                <option value="ar">Arabic</option>
+                                <option value="id">Indonesian</option>
+                                <option value="th">Thai</option>
+                                <option value="zh">Chinese</option>
+                                <option value="ru">Russian</option>
+                                <option value="tr">Turkish</option>
+                                <option value="vi">Vietnamese</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>
@@ -120,31 +218,44 @@
                 <div class="section-label"><span class="dot"></span>AI Provider</div>
                 <div class="select-wrap">
                     <select id="ai-provider">
-                        <option value="auto">Auto (any free model)</option>
-                        <option value="gemini">Google Gemini</option>
-                        <option value="groq">Groq</option>
+                        <option value="auto">Auto (best free model)</option>
+                        <option value="gemini">Google Gemini Flash</option>
+                        <option value="xai">xAI Grok</option>
+                        <option value="groq">Groq (Llama)</option>
                         <option value="openrouter">OpenRouter</option>
                     </select>
                 </div>
             </div>
 
-            <!-- 8. Output Options -->
+            <!-- 8. Caption Style -->
+            <div class="section">
+                <div class="section-label"><span class="dot"></span>Caption Style</div>
+                <div class="select-wrap">
+                    <select id="caption-style">
+                        <option value="single_line">Single Line (Standard)</option>
+                        <option value="double_line">Double Line Captions</option>
+                        <option value="word_by_word">Word by Word</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 9. Output Options -->
             <div class="section">
                 <div class="section-label"><span class="dot"></span>Output</div>
-                <div class="pills" id="output-options">
+                <div class="pills" id="output-options" data-mode="multi">
                     <div class="pill active" data-output="text_layers">Text Layers in AE</div>
                     <div class="pill" data-output="srt_export">SRT File Export</div>
                 </div>
             </div>
 
-            <!-- 9. Generate Button -->
+            <!-- 10. Generate Button -->
             <div class="section" id="generate-section">
-                <button class="btn btn-primary" id="btn-generate">
+                <button class="btn btn-primary btn-generate" id="btn-generate">
                     ▶ Generate Captions
                 </button>
             </div>
 
-            <!-- 10. Progress Section -->
+            <!-- 11. Progress Section -->
             <div class="progress-section" id="progress-section">
                 <div class="progress-step" id="progress-step">
                     <div class="spinner"></div>
@@ -174,6 +285,28 @@
         <div class="tab-content" id="tab-settings">
 
             <div class="settings-header">
+                <svg viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                </svg>
+                Appearance
+            </div>
+            
+            <div class="api-section">
+                <div class="api-section-header">
+                    <span class="api-section-name">
+                        Primary Color
+                    </span>
+                </div>
+                <div class="api-section-hint">Choose accent color for UI elements</div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="color" id="primary-color-picker" value="#C6FF34" style="width:40px;height:32px;padding:0;border:none;border-radius:4px;cursor:pointer;">
+                    <button class="btn btn-sm" id="btn-reset-color" style="flex:none;width:auto;">Reset</button>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="settings-header">
                 <svg viewBox="0 0 16 16">
                     <path d="M8 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5.5 8a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z" />
                     <path
@@ -182,15 +315,19 @@
                 API Keys
             </div>
 
+            <div class="settings-note">
+                All APIs below offer <strong>free tiers</strong>. Create your own keys — no paid plan needed.
+            </div>
+
             <!-- ElevenLabs -->
             <div class="api-section">
                 <div class="api-section-header">
                     <span class="api-section-name">
                         ElevenLabs
-                        <span class="badge badge-recommended">Recommended</span>
+                        <span class="badge badge-stt">STT</span>
                     </span>
                 </div>
-                <div class="api-section-hint">10k free chars/mo — <a href="https://elevenlabs.io"
+                <div class="api-section-hint">Free speech-to-text — <a href="https://elevenlabs.io"
                         target="_blank">elevenlabs.io</a></div>
                 <input type="password" class="input-key" id="key-elevenlabs" placeholder="xi-api-key…"
                     autocomplete="off">
@@ -219,9 +356,35 @@
                         <span class="badge badge-recommended">Recommended</span>
                     </span>
                 </div>
-                <div class="api-section-hint">Free tier — <a href="https://aistudio.google.com"
+                <div class="api-section-hint">Free tier · Fast & accurate — <a href="https://aistudio.google.com"
                         target="_blank">aistudio.google.com</a></div>
                 <input type="password" class="input-key" id="key-gemini" placeholder="API key…" autocomplete="off">
+            </div>
+
+            <!-- xAI Grok -->
+            <div class="api-section">
+                <div class="api-section-header">
+                    <span class="api-section-name">
+                        xAI Grok
+                        <span class="badge badge-free">$25 Free</span>
+                    </span>
+                </div>
+                <div class="api-section-hint">$25/mo free credits — <a href="https://console.x.ai"
+                        target="_blank">console.x.ai</a></div>
+                <input type="password" class="input-key" id="key-xai" placeholder="xai-… key" autocomplete="off">
+            </div>
+
+            <!-- Groq -->
+            <div class="api-section">
+                <div class="api-section-header">
+                    <span class="api-section-name">
+                        Groq
+                        <span class="badge badge-free">Free</span>
+                    </span>
+                </div>
+                <div class="api-section-hint">Free Llama inference — <a href="https://console.groq.com"
+                        target="_blank">console.groq.com</a></div>
+                <input type="password" class="input-key" id="key-groq" placeholder="gsk_… key" autocomplete="off">
             </div>
 
             <!-- OpenRouter -->
@@ -238,29 +401,30 @@
                     autocomplete="off">
             </div>
 
-            <!-- Groq -->
-            <div class="api-section">
-                <div class="api-section-header">
-                    <span class="api-section-name">
-                        Groq
-                        <span class="badge badge-free">Free</span>
-                    </span>
-                </div>
-                <div class="api-section-hint">Free at — <a href="https://console.groq.com"
-                        target="_blank">console.groq.com</a></div>
-                <input type="password" class="input-key" id="key-groq" placeholder="API key…" autocomplete="off">
-            </div>
-
             <div class="divider"></div>
 
             <button class="btn btn-primary" id="btn-save-keys">Save Keys</button>
             <div class="save-feedback" id="save-feedback">✓ Keys saved to local storage</div>
 
+            <div class="divider"></div>
+
+            <!-- Licensing Status -->
+            <div class="settings-header">
+                <svg viewBox="0 0 16 16">
+                    <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2-3a2 2 0 11-4 0 2 2 0 014 0zm4 8c0-1-1-4-6-4s-6 3-6 4v1h12v-1z"/>
+                </svg>
+                License Information
+            </div>
+            <div class="api-section">
+                <div class="api-section-hint">License active for: <strong id="license-active-email" style="color:var(--text-primary)">—</strong></div>
+                <button class="btn btn-danger btn-sm mt-8" id="btn-deactivate-license">Deactivate License</button>
+            </div>
+
         </div>
     </div>
 
     <script src="lib/CSInterface.js"></script>
-    <script src="main.js"></script>
+    <script src="main.js?v=2.0.0"></script>
 </body>
 
 </html>

@@ -1,16 +1,16 @@
 @echo off
-title Captionizer Installer
+title PingWin Captions Installer
 color 0B
 
 echo =========================================================
-echo               C A P T I O N I Z E R
+echo          P I N G W I N   C A P T I O N S
 echo.
 echo     Adobe After Effects and Premiere Pro CEP Extension
 echo                Windows Installer
 echo =========================================================
 echo.
 
-set "EXT_DIR=%APPDATA%\Adobe\CEP\extensions\com.captionizer.panel"
+set "EXT_DIR=%APPDATA%\Adobe\CEP\extensions\com.pingwin.captions"
 set "SOURCE_DIR=%~dp0"
 
 echo [INFO] Target: "%EXT_DIR%"
@@ -32,6 +32,7 @@ copy /y "%SOURCE_DIR%style.css" "%EXT_DIR%\style.css" >nul
 copy /y "%SOURCE_DIR%main.js" "%EXT_DIR%\main.js" >nul
 copy /y "%SOURCE_DIR%host.jsx" "%EXT_DIR%\host.jsx" >nul
 copy /y "%SOURCE_DIR%.debug" "%EXT_DIR%\.debug" >nul
+if exist "%SOURCE_DIR%logo.png" copy /y "%SOURCE_DIR%logo.png" "%EXT_DIR%\logo.png" >nul
 echo [OK] Files copied.
 echo.
 
@@ -48,6 +49,6 @@ echo   INSTALLATION COMPLETED SUCCESSFULLY!
 echo =========================================================
 echo.
 echo Launch After Effects or Premiere Pro.
-echo Go to: Window -- Extensions -- Captionizer
+echo Go to: Window -- Extensions -- PingWin Captions
 echo.
 pause

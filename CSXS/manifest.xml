@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="7.0" ExtensionBundleId="com.captionizer.panel" ExtensionBundleVersion="1.0.0"
-                   ExtensionBundleName="Captionizer"
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.pingwin.captions" ExtensionBundleVersion="1.0.0"
+                   ExtensionBundleName="PingWin Captions"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <ExtensionList>
-        <Extension Id="com.captionizer.panel" Version="1.0.0" />
+        <Extension Id="com.pingwin.captions" Version="1.0.0" />
     </ExtensionList>
 
     <ExecutionEnvironment>
         <HostList>
             <Host Name="AEFT" Version="[16.0,99.9]" />
+            <Host Name="PPRO" Version="[13.0,99.9]" />
         </HostList>
         <LocaleList>
             <Locale Code="All" />
@@ -20,7 +21,7 @@
     </ExecutionEnvironment>
 
     <DispatchInfoList>
-        <Extension Id="com.captionizer.panel">
+        <Extension Id="com.pingwin.captions">
             <DispatchInfo>
                 <Resources>
                     <MainPath>./index.html</MainPath>
@@ -30,6 +31,8 @@
                         <Parameter>--allow-file-access</Parameter>
                         <Parameter>--enable-nodejs</Parameter>
                         <Parameter>--mixed-context</Parameter>
+                        <Parameter>--disable-web-security</Parameter>
+                        <Parameter>--ignore-certificate-errors</Parameter>
                     </CEFCommandLine>
                 </Resources>
                 <Lifecycle>
@@ -37,7 +40,7 @@
                 </Lifecycle>
                 <UI>
                     <Type>Panel</Type>
-                    <Menu>Captionizer</Menu>
+                    <Menu>PingWin Captions</Menu>
                     <Geometry>
                         <Size>
                             <Height>600</Height>

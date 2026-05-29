@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ExtensionList>
-    <Extension Id="com.captionizer.panel">
+    <Extension Id="com.pingwin.captions">
         <HostList>
             <Host Name="AEFT" Port="8088"/>
             <Host Name="PPRO" Port="8089"/>
